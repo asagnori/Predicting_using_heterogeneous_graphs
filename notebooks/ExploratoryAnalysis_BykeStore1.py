@@ -11,7 +11,6 @@ Created on Tue Mar 24 16:19:12 2026
 import sys
 import pandas as pd
 import seaborn as sns
-#import mysql.connector
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 
@@ -20,14 +19,14 @@ print(sys.executable)
 #%%
 # 1. Conexão com o Banco de Dados
 config = {
-    'user': 'root',
-    'password': 'Vitoria%402526',
-    'host': 'localhost:3306',
-    'database': 'bike_store'
+    'user': '',
+    'password': '',
+    'host': '',
+    'database': ''
 }
 
 engine = create_engine(
-    "mysql+pymysql://root:Vitoria%402526@localhost:3306/bike_store"
+    f"mysql+pymysql://{config['user']}:{config['password']}@{config['host']}/{config['database']}"
 )
 
 # teste simples

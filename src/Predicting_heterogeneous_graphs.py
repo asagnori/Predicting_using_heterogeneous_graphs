@@ -12,28 +12,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns
-
-from sqlalchemy import create_engine
-
 import torch 
 import torch_geometric
 from torch_geometric.nn import SAGEConv, to_hetero
 from torch_geometric.nn import SAGEConv, HeteroConv
 from torch_geometric.nn import GraphConv, to_hetero
+from sqlalchemy import create_engine
 import torch.nn.functional as F
 from torch_geometric.data import HeteroData
-
-
-import sklearn
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, f1_score, precision_score, recall_score, average_precision_score
 import xgboost as xgb
+import sklearn
 
 # Print Versions
 print(f"PyTorch: {torch.__version__}")
 print(f"PyG: {torch_geometric.__version__}")
 print(f"XGBoost: {xgboost.__version__}")
 print(f"Scikit-Learn: {sklearn.__version__}")
-
 
 #%% 1 Configuração 
 # --- 1.1 Configuração de Hardware (Essencial para Mac M1/M2/M3) ---
@@ -48,15 +43,17 @@ else:
     print("Usando CPU")
     
 # 1.2 Conexão com o Banco de Dados
+#%%
+# 1. Conexão com o Banco de Dados
 config = {
-    'user': 'root',
-    'password': 'Vitoria%402526',
-    'host': 'localhost:3306',
-    'database': 'bike_store'
+    'user': '',
+    'password': '',
+    'host': '',
+    'database': ''
 }
 
 engine = create_engine(
-    "mysql+pymysql://root:Vitoria%402526@localhost:3306/bike_store"
+    f"mysql+pymysql://{config['user']}:{config['password']}@{config['host']}/{config['database']}"
 )
 
 #%%

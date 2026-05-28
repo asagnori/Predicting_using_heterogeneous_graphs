@@ -13,12 +13,10 @@ import numpy as np
 import torch 
 import torch_geometric
 from torch_geometric.data import HeteroData
-#import mysql.connector
 from sqlalchemy import create_engine
 
 
 #%% 1 Configuração 
-
 # --- 1.1 Configuração de Hardware (Essencial para Mac M1/M2/M3) ---
 if torch.backends.mps.is_available():
     device = torch.device("mps")
@@ -31,15 +29,17 @@ else:
     print("Usando CPU")
     
 # 1.2 Conexão com o Banco de Dados
+#%%
+# 1. Conexão com o Banco de Dados
 config = {
-    'user': 'root',
-    'password': 'Vitoria%402526',
-    'host': 'localhost:3306',
-    'database': 'bike_store'
+    'user': '',
+    'password': '',
+    'host': '',
+    'database': ''
 }
 
 engine = create_engine(
-    "mysql+pymysql://root:Vitoria%402526@localhost:3306/bike_store"
+    f"mysql+pymysql://{config['user']}:{config['password']}@{config['host']}/{config['database']}"
 )
 
 #%%

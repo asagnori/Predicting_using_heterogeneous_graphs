@@ -27,7 +27,7 @@ import sklearn
 # Print Versions
 print(f"PyTorch: {torch.__version__}")
 print(f"PyG: {torch_geometric.__version__}")
-print(f"XGBoost: {xgboost.__version__}")
+print(f"XGBoost: {xgb.__version__}")
 print(f"Scikit-Learn: {sklearn.__version__}")
 
 #%% 1 Configuração 
@@ -45,11 +45,11 @@ else:
 # 1.2 Conexão com o Banco de Dados
 #%%
 # 1. Conexão com o Banco de Dados
-config = {
-    'user': '',
-    'password': '',
-    'host': '',
-    'database': ''
+config= {
+'user': '',
+'password': '',
+'host': '',
+'database': 'bike_store'
 }
 
 engine = create_engine(
@@ -243,17 +243,11 @@ edge_index_dict = {k: v.to(device) for k, v in data.edge_index_dict.items()}
 y_true = data['order'].y.to(device)
 mask = data['order'].train_mask.to(device)
 
-# 1. Calcule o peso das classes (Inverso da frequência)
-# Se ~5 vezes mais pedidos no prazo, dar peso 5 para o atraso.
-# weights = torch.tensor([1.0, 5.0]).to(device)
-weights = torch.tensor([1.0, 2.5]).to(device)
-
 def train():
     model.train()
     optimizer.zero_grad()
     out_dict = model(x_dict, edge_index_dict)
-#    loss = F.cross_entropy(out_dict['order'][mask], y_true[mask])
-    loss = F.cross_entropy(out_dict['order'][mask], y_true[mask], weight=weights)
+    loss = F.cross_entropy(out_dict['order'][mask], y_true[mask])
     loss.backward()
     optimizer.step()
     return float(loss)

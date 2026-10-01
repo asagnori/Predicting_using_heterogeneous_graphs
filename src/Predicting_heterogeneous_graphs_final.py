@@ -253,7 +253,7 @@ for fold, (train_idx, val_idx) in enumerate(tscv.split(df_orders)):
         train_edge_index[etype] = eindex[:, mask_tr]
         eval_edge_index[etype] = eindex[:, mask_ev]
 
-    # CONVERSÃO EXPLÍCITA PARA EVITAR O ERRO 'numpy.int64'
+    # Conversao explicíta para evitar o erro 'numpy.int64' encontrado no PyTorch
     train_idx_tensor = torch.tensor(train_idx, dtype=torch.long, device=device)
     val_idx_tensor = torch.tensor(val_idx, dtype=torch.long, device=device)
 

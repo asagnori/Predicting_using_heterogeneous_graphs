@@ -1,14 +1,14 @@
 import torch
 import torch.nn.functional as F
 
-from config.settings import (
+from src.config.settings import (
     DEVICE,
     LEARNING_RATE,
     EPOCHS
 )
 
 
-def train_gnn_model(model, data):
+def train_gnn_model(model, data, train_mask=None):
 
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -27,10 +27,10 @@ def train_gnn_model(model, data):
 
     y_true = data['order'].y.to(DEVICE)
 
-    mask = data['order'].train_mask.to(DEVICE)
-
-    weights = torch.tensor(
-        [1.0, 2.5]
+    mask = (
+        data["order"].train_mask
+        if train_mask is None
+        else train_mask
     ).to(DEVICE)
 
     def train():
@@ -46,15 +46,14 @@ def train_gnn_model(model, data):
 
         loss = F.cross_entropy(
             out_dict['order'][mask],
-            y_true[mask]
-            # weight=weights
+            y_true[mask],
         )
 
         loss.backward()
 
         optimizer.step()
 
-        return float(loss)
+        return float(loss.detach().cpu())
 
     print("Iniciando Treinamento GNN...")
 

@@ -1,82 +1,46 @@
 import pandas as pd
 from xgboost import XGBClassifier
 
-def train_xgboost_baseline(df_orders):
 
-    df_xgb = df_orders.copy()
-
-    # =====================================================
-    # Features
-    # =====================================================
-
-    df_xgb['order_month'] = pd.to_datetime(
-        df_xgb['order_date']
-    ).dt.month
-
-    df_xgb['required_month'] = pd.to_datetime(
-        df_xgb['required_date']
-    ).dt.month
-
-    X = pd.DataFrame({
-
-        'customer_id':
-            df_xgb['customer_id'],
-
-        'store_id':
-            df_xgb['store_id'],
-
-        'staff_id':
-            df_xgb['staff_id'],
-
-        'order_month':
-            df_xgb['order_month'],
-
-        'required_month':
-            df_xgb['required_month']
-
+def make_xgboost_features(df_orders: pd.DataFrame) -> pd.DataFrame:
+    dates = df_orders.copy()
+    dates["order_month"] = pd.to_datetime(dates["order_date"]).dt.month
+    dates["required_month"] = pd.to_datetime(dates["required_date"]).dt.month
+    return pd.DataFrame({
+        "store_id": dates["store_id"].astype("category"),
+        "staff_id": dates["staff_id"].astype("category"),
+        "order_month": dates["order_month"].astype("category"),
+        "required_month": dates["required_month"].astype("category"),
     })
 
-    y = df_xgb['y']
 
-    # =====================================================
-    # Split Temporal
-    # =====================================================
+def train_xgboost_baseline(
+    df_orders: pd.DataFrame,
+    train_indices,
+    validation_indices,
+) -> tuple[XGBClassifier, pd.Series, pd.Series]:
+    features = make_xgboost_features(df_orders)
+    target = df_orders["y"]
+    y_train = target.iloc[train_indices]
+    y_validation = target.iloc[validation_indices]
+    positive = int((y_train == 1).sum())
+    negative = int((y_train == 0).sum())
 
-    train_mask_xgb = (
-        pd.to_datetime(df_xgb['order_date'])
-        < '2018-01-01'
-    )
-
-    test_mask_xgb = (
-        pd.to_datetime(df_xgb['order_date'])
-        >= '2018-01-01'
-    )
-
-    X_train = X[train_mask_xgb]
-    X_test = X[test_mask_xgb]
-
-    y_train = y[train_mask_xgb]
-    y_test = y[test_mask_xgb]
-
-    # =====================================================
-    # Modelo
-    # =====================================================
-
-    model = XGBClassifier(
-
+    model_kwargs = dict(
         n_estimators=100,
         max_depth=4,
         learning_rate=0.05,
-        objective='binary:logistic',
-        eval_metric='logloss',
+        objective="binary:logistic",
+        eval_metric="logloss",
+        n_jobs=1,
         random_state=42
-
     )
-
-    model.fit(X_train, y_train)
-
-    y_pred = model.predict(X_test)
-
-    print("\nBaseline XGBoost treinado.")
-
-    return y_test, y_pred
+    if positive:
+        model_kwargs["scale_pos_weight"] = negative / positive
+    model = XGBClassifier(**model_kwargs, enable_categorical=True)
+    model.fit(features.iloc[train_indices], y_train)
+    return (
+        model,
+        y_validation,
+        model.predict_proba(features.iloc[validation_indices])[:, 1],
+    )

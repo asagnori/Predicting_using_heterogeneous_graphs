@@ -1,22 +1,37 @@
-from data.loader import load_data
-from graph.graph_builder import build_graph
 from sqlalchemy import create_engine
-from config.settings import DATABASE_CONFIG
+from sqlalchemy.engine import URL
 
-config = DATABASE_CONFIG
+from src.config.settings import DATABASE_CONFIG
+from src.data.loader import load_data
+from src.graph.graph_builder import build_graph
 
-engine = create_engine(
-    f"mysql+pymysql://"
-    f"{config['user']}:"
-    f"{config['password']}@"
-    f"{config['host']}/"
-    f"{config['database']}"
-)
 
-# conexão
-df_dict = load_data(engine)
+def create_database_engine():
+    url = URL.create(
+        "mysql+pymysql",
+        username=DATABASE_CONFIG["user"],
+        password=DATABASE_CONFIG["password"],
+        host=DATABASE_CONFIG["host"].split(":")[0],
+        port=int(DATABASE_CONFIG["port"])
+        if DATABASE_CONFIG["port"]
+        else (
+            int(DATABASE_CONFIG["host"].split(":")[1])
+            if ":" in DATABASE_CONFIG["host"]
+            else None
+        ),
+        database=DATABASE_CONFIG["database"],
+    )
+    return create_engine(url)
 
-# build grafo
-data, df_orders = build_graph(df_dict)
 
-print(data)
+def main() -> None:
+    engine = create_database_engine()
+    df_dict = load_data(engine)
+    data, df_orders, maps = build_graph(df_dict)
+    print(data)
+    print(f"Mapeamentos criados: {', '.join(maps)}")
+    print(f"Pedidos preparados: {len(df_orders)}")
+
+
+if __name__ == "__main__":
+    main()

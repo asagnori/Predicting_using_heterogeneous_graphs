@@ -1,69 +1,60 @@
+"""Feature engineering for heterogeneous graph nodes."""
+
+from __future__ import annotations
+
 import pandas as pd
 import torch
+from torch_geometric.data import HeteroData
 
-def create_features(df_dict, data):
 
-    # =====================================================
-    # Customer Features
-    # =====================================================
+def create_features(
+    df_dict: dict[str, pd.DataFrame],
+    data: HeteroData,
+) -> tuple[HeteroData, pd.DataFrame]:
+    """Create node attributes and labels following the thesis experiment."""
+    df_orders = df_dict["orders"].copy()
 
-    cust_features = pd.get_dummies(
-        df_dict['customers']['state']
-    ).astype(float)
-
-    data['customer'].x = torch.tensor(
-        cust_features.values,
-        dtype=torch.float
+    customer_states = pd.get_dummies(
+        df_dict["customers"]["state"],
+        dtype=float,
+    )
+    data["customer"].x = torch.tensor(
+        customer_states.to_numpy(),
+        dtype=torch.float,
     )
 
-    # =====================================================
-    # Product Features
-    # =====================================================
-
-    price = df_dict['products']['list_price']
-
+    prices = df_dict["products"]["list_price"].astype(float)
+    price_range = prices.max() - prices.min()
     price_norm = (
-        (price - price.min()) /
-        (price.max() - price.min())
+        (prices - prices.min()) / price_range
+        if price_range
+        else prices * 0
+    )
+    data["product"].x = torch.tensor(
+        price_norm.to_numpy().reshape(-1, 1),
+        dtype=torch.float,
     )
 
-    data['product'].x = torch.tensor(
-        price_norm.values.reshape(-1, 1),
-        dtype=torch.float
+    table_by_node_type = {
+        "brand": "brands",
+        "category": "categories",
+        "store": "stores",
+        "staff": "staffs",
+    }
+    for node_type, table_name in table_by_node_type.items():
+        data[node_type].x = torch.eye(
+            len(df_dict[table_name]),
+            dtype=torch.float,
+        )
+
+    order_month = pd.to_datetime(df_orders["order_date"]).dt.month
+    order_features = pd.get_dummies(order_month, dtype=float)
+    data["order"].x = torch.tensor(
+        order_features.to_numpy(),
+        dtype=torch.float,
     )
-
-    # =====================================================
-    # Brand Features
-    # =====================================================
-
-    data['brand'].x = torch.eye(
-        len(df_dict['brands']),
-        dtype=torch.float
+    data["order"].y = torch.tensor(
+        df_orders["y"].to_numpy(),
+        dtype=torch.long,
     )
-
-    # =====================================================
-    # Order Features
-    # =====================================================
-
-    df_orders = df_dict['orders'].copy()
-
-    df_orders['y'] = (
-        df_orders['shipped_date'] >
-        df_orders['required_date']
-    ).astype(int)
-
-    data['order'].y = torch.tensor(
-        df_orders['y'].values,
-        dtype=torch.long
-    )
-
-    order_month = pd.to_datetime(
-        df_orders['order_date']
-    ).dt.month
-
-    data['order'].x = torch.tensor(
-        pd.get_dummies(order_month).values,
-        dtype=torch.float
-    )
-
     return data, df_orders

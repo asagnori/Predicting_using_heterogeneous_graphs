@@ -1,143 +1,207 @@
 # Predicting Using Heterogeneous Graphs
 
-## Overview
+Projeto acadêmico do TCC que investiga a previsão de atrasos em pedidos de uma
+Bike Store usando dados relacionais, modelos tabulares e redes neurais de
+grafos heterogêneos.
 
-This project explores the use of Heterogeneous Graph Neural Networks (HGNNs) for predictive analytics using relational business data from a Bike Store dataset.
+## Objetivo
 
-The main objective is to model relationships between customers, orders, products, and brands as a heterogeneous graph and apply Graph Neural Network techniques to predict business outcomes such as delayed orders.
-
-The project combines:
-
-* Graph Machine Learning
-* Feature Engineering
-* Heterogeneous Graph Modeling
-* Predictive Analytics
-* Temporal and Exploratory Data Analysis
-
----
-
-## Technologies
-
-* Python
-* PyTorch
-* PyTorch Geometric (PyG)
-* NetworkX
-* Pandas
-* Scikit-Learn
-* XGBoost
-* SQLAlchemy
-* Matplotlib / Seaborn
-
----
-
-## Project Structure
+O alvo da classificação é criado a partir das datas do pedido:
 
 ```text
-Predicting_using_heterogeneous_graphs/
-│
-├── data/          # Raw and processed datasets
-├── docs/          # Documentation and reports
-├── images/        # Generated charts and graph schemas
-├── notebooks/     # Jupyter notebooks and experiments
-├── scripts/       # Utility scripts
-├── src/           # Core project source code
-├── requirements.txt
-├── README.md
-└── .gitignore
+atrasado = shipped_date > required_date
 ```
 
----
+O grafo possui os seguintes tipos de nós:
 
-## Graph Structure
+- `customer`
+- `order`
+- `product`
+- `brand`
+- `category`
+- `store`
+- `staff`
 
-The heterogeneous graph is composed of multiple node and edge types:
+E as relações:
 
-### Node Types
+```text
+customer -> order
+product  -> order
+brand    -> product
+category -> product
+store    -> order
+staff    -> order
+```
 
-* Customer
-* Order
-* Product
-* Brand
+O experimento compara um baseline XGBoost com GraphSAGE heterogêneo,
+validação temporal e explicabilidade por SHAP e GNNExplainer.
 
-### Relationships
+## Resultados visuais
 
-* Customer → Order
-* Product → Order
-* Brand → Product
+As figuras abaixo documentam a evolução do experimento, desde a análise
+preliminar até os resultados finais do modelo.
 
-This structure enables the model to capture relational dependencies and business interactions across the dataset.
+### Análise preliminar
 
----
+#### Distribuição do alvo
 
-## Features Engineering
+![Distribuição da variável alvo](<docs/TCC/img/preliminary results/2- Distribution_Target_Chart.png>)
 
-Examples of engineered features include:
+#### Matriz de confusão preliminar
 
-* Customer state encoding
-* Product price normalization
-* Order month seasonality
-* Temporal train/test split
-* Order delay target variable
+![Matriz de confusão preliminar](<docs/TCC/img/preliminary results/3- Confusion_Matrix_Chart.png>)
 
----
+#### Sazonalidade dos pedidos
 
-## Exploratory Analysis
+![Análise de sazonalidade](<docs/TCC/img/preliminary results/4- Seasonality_Chart.png>)
 
-The project also includes:
+#### Desbalanceamento das classes
 
-* Class imbalance analysis
-* Seasonality analysis
-* Confusion matrix evaluation
-* Heterogeneous graph schema visualization
+![Desbalanceamento das classes](<docs/TCC/img/preliminary results/5- Class Imbalance_Chart.png>)
 
-Generated charts are available in the `images/` folder.
+#### Explicabilidade preliminar
 
----
+![Explicabilidade preliminar com SHAP e GNNExplainer](<docs/TCC/img/preliminary results/6- Explicability_Chart (SHAP & GNNExplainer).png>)
 
-## Model
+### Resultados finais
 
-The project uses Graph Neural Networks with PyTorch Geometric, including:
+#### Esquema do grafo heterogêneo
 
-* GraphSAGE
-* Heterogeneous Graph Modeling
-* Message Passing Architecture
+![Esquema do grafo heterogêneo](<docs/TCC/img/final results/1- Hetero_Graph_Schema_Chart.png>)
 
-Traditional Machine Learning models such as XGBoost are also used for comparison purposes.
+#### Explicabilidade SHAP do XGBoost
 
----
+![Explicabilidade SHAP do XGBoost](<docs/TCC/img/final results/2- Explicability SHAP XGBoost.png>)
 
-## Setup
+#### Importância global das features
 
-Create and activate a virtual environment:
+![Importância global das features](<docs/TCC/img/final results/3- Explicability SHAP XGBoost - Global Importance Features.png>)
+
+#### Importância real das features
+
+![Importância real das features](<docs/TCC/img/final results/4- Explicability SHAP XGBoost - Real Importance Features.png>)
+
+#### Curva Precision-Recall
+
+![Curva Precision-Recall e PR-AUC](<docs/TCC/img/final results/5- Precision &  Recall Curve - PR-AUC.png>)
+
+#### Matrizes de confusão da validação temporal
+
+![Matrizes de confusão da validação temporal](<docs/TCC/img/final results/6- Temporal Comparative Confusion Matriz - K4 Folds.png>)
+
+#### Importância global das relações
+
+![Importância global das relações pelo GNNExplainer](<docs/TCC/img/final results/7- GNNExplainer - Global Importance & elationship.png>)
+
+#### Comparação por classe real
+
+![Comparação das explicações por classe real](<docs/TCC/img/final results/8- GNNExplainer Real Classe Comparision.png>)
+
+## Organização do repositório
+
+```text
+data/                       Dados CSV e dados externos
+docs/TCC/python/            Scripts monolíticos experimentais da tese
+docs/TCC/img/              Figuras preliminares e resultados finais
+docs/                       Documentos e materiais acadêmicos
+images/                     Gráficos gerados anteriormente
+notebooks/                  Análises exploratórias
+scripts/                    SQL de criação e carga do banco
+src/
+  config/                   Configuração e variáveis de ambiente
+  data/                     Leitura de tabelas e features
+  graph/                    Mapeamentos e construção do HeteroData
+  models/                   GraphSAGE e baseline XGBoost
+  training/                 Treinamento e validação temporal
+  explainability/           Integração com GNNExplainer
+  visualization/            Gráficos e tabelas de resultados
+```
+
+## Scripts experimentais
+
+Os arquivos abaixo são referências acadêmicas e permanecem monolíticos
+intencionalmente:
+
+- `docs/TCC/python/Predicting_heterogeneous_graphs.py`
+- `docs/TCC/python/Predicting_heterogeneous_graphs_preliminary.py`
+- `docs/TCC/python/Predicting_heterogeneous_graphs_final.py`
+- `docs/TCC/python/Predicting_heterogeneous_graphs_final_w_GNNExplainer.py`
+
+Eles preservam os experimentos utilizados na evolução da tese. A implementação
+modular em `src/` aplica a lógica do script final sem substituir essas
+referências.
+
+## Configuração do banco
+
+As credenciais não ficam no código. Crie ou mantenha um arquivo `.env` na raiz
+do projeto. O código modular aceita as variáveis recomendadas:
+
+```dotenv
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=bike_store
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+```
+
+Também é suportado temporariamente o bloco legado `DatabaseConfig` já usado no
+arquivo `.env` deste projeto. Recomenda-se migrar para as variáveis `DB_*`.
+
+Parâmetros opcionais:
+
+```dotenv
+GNN_EPOCHS=100
+GNN_LEARNING_RATE=0.01
+GNN_HIDDEN_CHANNELS=64
+GNN_OUT_CHANNELS=2
+RANDOM_STATE=42
+TEMPORAL_CUTOFF=2018-01-01
+```
+
+O arquivo `.env` é ignorado pelo Git e não deve ser compartilhado.
+
+## Instalação
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
 pip install -r requirements.txt
 ```
 
----
+## Execução modular
 
-## Running the Project
-
-Example:
+O entrypoint modular carrega as tabelas, prepara o alvo, constrói o grafo e
+exibe um resumo:
 
 ```bash
-python src/Predicting_heterogeneous_graphs.py
+python -m src.main
 ```
 
-or run the notebooks inside the `notebooks/` directory.
+As funções de treinamento e explicabilidade podem ser importadas sem executar
+conexão ou treinamento automaticamente:
 
----
+```python
+from src.training.cross_validation import run_temporal_experiment
+from src.explainability.gnn import create_order_explainer
+```
 
-## Author
+## Validações
+
+O repositório contém os dados e scripts de análise, mas não possui uma suíte de
+testes automatizados. A validação mínima da implementação modular pode ser
+executada com:
+
+```bash
+python -m compileall -q src
+git diff --check
+```
+
+## Tecnologias
+
+Python, Pandas, NumPy, PyTorch, PyTorch Geometric, XGBoost, SHAP, Scikit-Learn,
+SQLAlchemy, NetworkX, Matplotlib e Seaborn.
+
+## Autor
 
 Angëlo Sagnori
-
 MBA Data Science & Analytics – USP/ESALQ
-SAP Data & Analytics | Data Engineering

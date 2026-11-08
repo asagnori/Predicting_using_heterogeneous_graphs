@@ -1,15 +1,22 @@
+from __future__ import annotations
+
+import pandas as pd
 import torch
 from torch_geometric.data import HeteroData
 
-from graph.mappings import (
+from src.data.features import create_features
+from src.data.loader import prepare_orders
+from src.graph.mapping import (
     get_mapping,
     create_edges
 )
+from src.config.settings import TEMPORAL_CUTOFF
 
-from data.feature_engineering import create_features
 
-
-def build_graph(df_dict):
+def build_graph(
+    df_dict: dict[str, pd.DataFrame],
+) -> tuple[HeteroData, pd.DataFrame, dict[str, dict]]:
+    df_dict = {**df_dict, "orders": prepare_orders(df_dict["orders"])}
 
     data = HeteroData()
 
@@ -40,12 +47,12 @@ def build_graph(df_dict):
     order_dates = pd.to_datetime(df_orders['order_date'])
 
     data['order'].train_mask = torch.tensor(
-        (order_dates < '2018-01-01').values,
+        (order_dates < TEMPORAL_CUTOFF).values,
         dtype=torch.bool
     )
 
     data['order'].test_mask = torch.tensor(
-        (order_dates >= '2018-01-01').values,
+        (order_dates >= TEMPORAL_CUTOFF).values,
         dtype=torch.bool
     )
 
@@ -116,4 +123,4 @@ def build_graph(df_dict):
             [indices, indices],
             dim=0
         )
-    return data, df_orders
+    return data, df_orders, maps

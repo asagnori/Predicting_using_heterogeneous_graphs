@@ -1,6 +1,5 @@
-def load_data(engine):
-    """Load data from the database."""
-    with engine.connect() as connection:
-        result = connection.execute("SELECT * FROM your_table")
-        data = result.fetchall()
-    return data
+"""Backward-compatible imports for the modular data package."""
+
+from src.data.loader import load_data, prepare_orders
+
+__all__ = ["load_data", "prepare_orders"]

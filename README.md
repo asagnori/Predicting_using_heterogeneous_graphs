@@ -160,6 +160,13 @@ TEMPORAL_CUTOFF=2018-01-01
 
 O arquivo `.env` é ignorado pelo Git e não deve ser compartilhado.
 
+Se a execução retornar `MySQL error 1045 (Access denied)`, o servidor foi
+alcançado, mas recusou a combinação de usuário e senha. Nesse caso, confirme
+as credenciais no MySQL e que o usuário possui permissão para o banco
+`bike_store`. O formato legado usado anteriormente podia armazenar caracteres
+especiais da senha codificados para URL; essa compatibilidade é convertida
+automaticamente pelo carregamento modular.
+
 ## Instalação
 
 ```bash

@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 from dotenv import load_dotenv
 
@@ -40,7 +41,11 @@ def _legacy_database_config() -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
     return {
-        str(key): str(item)
+        str(key): (
+            unquote(str(item))
+            if key == "password"
+            else str(item)
+        )
         for key, item in value.items()
         if key in {"host", "database", "user", "password"}
     }

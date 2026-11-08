@@ -34,8 +34,8 @@ class GNNModel(torch.nn.Module):
     def forward(self, x_dict, edge_index_dict):
         first_layer = self.conv1(x_dict, edge_index_dict)
         first_layer = {
-            key: F.relu(x)
+            key: F.relu(first_layer[key])
             if key in first_layer else x_dict[key]
-            for key, x in x_dict.items()
+            for key in x_dict
         }
         return self.conv2(first_layer, edge_index_dict)

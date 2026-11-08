@@ -2,6 +2,7 @@ import numpy as np
 
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
     precision_score,
     recall_score,
     f1_score
@@ -13,7 +14,11 @@ def print_comparative_table(
     y_test_xgb,
     y_pred_xgb,
     y_true_gnn,
-    y_pred_gnn
+    y_pred_gnn,
+    xgb_probabilities=None,
+    gnn_probabilities=None,
+    y_pred_dummy=None,
+    dummy_probabilities=None,
 
 ):
 
@@ -73,6 +78,14 @@ def print_comparative_table(
         y_pred_gnn,
         zero_division=0
     )
+    xgb_scores = (
+        y_pred_xgb if xgb_probabilities is None else xgb_probabilities
+    )
+    gnn_scores = (
+        y_pred_gnn if gnn_probabilities is None else gnn_probabilities
+    )
+    pr_auc_xgb = average_precision_score(y_test_xgb, xgb_scores)
+    pr_auc_gnn = average_precision_score(y_true_gnn, gnn_scores)
 
     # =====================================================
     # Impressão
@@ -111,6 +124,21 @@ def print_comparative_table(
         f"{f1_xgb:<16.4f} | "
         f"{f1_gnn:<16.4f}"
     )
+    print(
+        f"{'PR-AUC':<30} | "
+        f"{pr_auc_xgb:<16.4f} | "
+        f"{pr_auc_gnn:<16.4f}"
+    )
+    if y_pred_dummy is not None:
+        dummy_scores = (
+            y_pred_dummy
+            if dummy_probabilities is None
+            else dummy_probabilities
+        )
+        print(
+            f"{'Dummy PR-AUC':<30} | "
+            f"{average_precision_score(y_test_xgb, dummy_scores):<16.4f}"
+        )
 
     print("-"*70)
 

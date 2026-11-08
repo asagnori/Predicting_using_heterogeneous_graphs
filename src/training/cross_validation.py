@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from sklearn.model_selection import TimeSeriesSplit
 
 from src.config.settings import DEVICE, HIDDEN_CHANNELS, LEARNING_RATE, OUT_CHANNELS
 from src.models.heterognn import GNNModel
-from src.models.xgboost_baseline import train_xgboost_baseline
+from src.models.xgboost_baseline import (
+    make_xgboost_features,
+    train_xgboost_baseline,
+)
 
 
 def _filter_edges(edge_index_dict, train_indices, evaluation_indices, device):
@@ -86,13 +98,31 @@ def train_gnn_fold(data, train_indices, validation_indices, epochs=50):
 
 
 def run_temporal_experiment(data, df_orders, n_splits=4, gnn_epochs=50):
-    """Train XGBoost and GraphSAGE on the same temporal folds."""
+    """Train and compare Dummy, XGBoost, and GraphSAGE on temporal folds."""
     split = TimeSeriesSplit(n_splits=n_splits)
     results = []
     for fold, (train_indices, validation_indices) in enumerate(
         split.split(df_orders),
         start=1,
     ):
+        xgb_features = make_xgboost_features(df_orders)
+        target = df_orders["y"]
+        dummy_model = DummyClassifier(
+            strategy="stratified",
+            random_state=42,
+        )
+        dummy_model.fit(
+            xgb_features.iloc[train_indices],
+            target.iloc[train_indices],
+        )
+        y_validation = target.iloc[validation_indices]
+        dummy_predictions = dummy_model.predict(
+            xgb_features.iloc[validation_indices]
+        )
+        dummy_probabilities = dummy_model.predict_proba(
+            xgb_features.iloc[validation_indices]
+        )[:, 1]
+
         xgb_model, y_validation, xgb_probabilities = train_xgboost_baseline(
             df_orders, train_indices, validation_indices
         )
@@ -104,6 +134,9 @@ def run_temporal_experiment(data, df_orders, n_splits=4, gnn_epochs=50):
             "train_indices": train_indices,
             "validation_indices": validation_indices,
             "y_true": y_validation.to_numpy(),
+            "dummy_model": dummy_model,
+            "dummy_predictions": dummy_predictions,
+            "dummy_probabilities": dummy_probabilities,
             "xgb_model": xgb_model,
             "xgb_probabilities": xgb_probabilities,
             "gnn_model": gnn_model,
@@ -111,4 +144,49 @@ def run_temporal_experiment(data, df_orders, n_splits=4, gnn_epochs=50):
             "x_dict": x_dict,
             "edge_index": edge_index,
         })
+        gnn_probabilities = torch.softmax(
+            results[-1]["gnn_logits"],
+            dim=-1,
+        )[:, 1].numpy()
+        gnn_predictions = results[-1]["gnn_logits"].argmax(dim=-1).numpy()
+        results[-1]["gnn_probabilities"] = gnn_probabilities
+        results[-1]["gnn_predictions"] = gnn_predictions
+        results[-1]["metrics"] = {
+            "dummy": _classification_metrics(
+                y_validation, dummy_predictions, dummy_probabilities
+            ),
+            "xgb": _classification_metrics(
+                y_validation,
+                (xgb_probabilities >= 0.5).astype(int),
+                xgb_probabilities,
+            ),
+            "gnn": _classification_metrics(
+                y_validation, gnn_predictions, gnn_probabilities
+            ),
+        }
     return results
+
+
+def _classification_metrics(y_true, predictions, probabilities):
+    return {
+        "accuracy": accuracy_score(y_true, predictions),
+        "precision": precision_score(y_true, predictions, zero_division=0),
+        "recall": recall_score(y_true, predictions, zero_division=0),
+        "f1": f1_score(y_true, predictions, zero_division=0),
+        "pr_auc": average_precision_score(y_true, probabilities),
+    }
+
+
+def temporal_results_table(results) -> pd.DataFrame:
+    """Build the fold-by-fold comparison table, including PR-AUC."""
+    rows = []
+    for result in results:
+        for model_name, metrics in result["metrics"].items():
+            rows.append({
+                "fold": result["fold"],
+                "model": model_name,
+                **metrics,
+            })
+    return pd.DataFrame(rows).sort_values(["fold", "model"]).reset_index(
+        drop=True
+    )

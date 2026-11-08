@@ -36,6 +36,14 @@ staff    -> order
 O experimento compara um baseline XGBoost com GraphSAGE heterogêneo,
 validação temporal e explicabilidade por SHAP e GNNExplainer.
 
+O pipeline modular também inclui um `DummyClassifier` estratificado como
+baseline de acaso. A função `run_temporal_experiment()` executa quatro folds
+temporais por padrão e retorna, para cada fold e modelo, acurácia, precisão,
+recall, F1 e PR-AUC. A tabela pode ser materializada com
+`temporal_results_table()`. O SHAP do XGBoost modular usa exclusivamente as
+features de negócio (`store_id`, `staff_id`, `order_month` e
+`required_month`), sem IDs brutos de alta cardinalidade.
+
 ## Resultados visuais
 
 As figuras abaixo documentam a evolução do experimento, desde a análise
@@ -157,6 +165,10 @@ GNN_OUT_CHANNELS=2
 RANDOM_STATE=42
 TEMPORAL_CUTOFF=2018-01-01
 ```
+
+Antes do treinamento, o pipeline valida os dispositivos na ordem CUDA, MPS e
+CPU. O primeiro backend capaz de alocar e operar um tensor é selecionado
+automaticamente.
 
 O arquivo `.env` é ignorado pelo Git e não deve ser compartilhado.
 

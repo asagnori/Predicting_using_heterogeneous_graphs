@@ -46,14 +46,14 @@ class OrderExplainerModel(torch.nn.Module):
 
 
 def create_order_explainer(model, epochs=200, learning_rate=0.01):
-    """Create a PyG explainer configured for multiclass order prediction."""
+    """Create a PyG explainer configured for order attribute explanations."""
     wrapped_model = OrderExplainerModel(model).eval()
     return Explainer(
         model=wrapped_model,
         algorithm=GNNExplainer(epochs=epochs, lr=learning_rate),
         explanation_type="model",
         node_mask_type="attributes",
-        edge_mask_type="object",
+        edge_mask_type=None,
         model_config={
             "mode": "multiclass_classification",
             "task_level": "node",
@@ -68,7 +68,7 @@ def explain_orders(
     edge_index_dict: Mapping,
     order_indices,
 ) -> list[dict]:
-    """Collect edge-mask summaries for selected order nodes."""
+    """Collect node-attribute summaries for selected order nodes."""
     records = []
     for order_index in order_indices:
         explanation = explainer(
@@ -76,18 +76,15 @@ def explain_orders(
             edge_index_dict,
             index=int(order_index),
         )
-        for relation, mask in explanation.edge_mask_dict.items():
+        for node_type, mask in explanation.node_mask_dict.items():
             if mask.numel() == 0:
                 continue
             values = mask.detach().cpu()
             records.append({
                 "order_idx": int(order_index),
-                "relation": f"{relation[0]} -> {relation[2]}",
-                "relation_type": (
-                    "Direct" if relation[2] == "order" else "Indirect"
-                ),
+                "node_type": node_type,
                 "mean_importance": float(values.mean()),
                 "max_importance": float(values.max()),
-                "n_edges": int(values.numel()),
+                "n_features": int(values.numel()),
             })
     return records

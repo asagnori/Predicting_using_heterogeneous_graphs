@@ -153,7 +153,7 @@ plt.tight_layout()
 plt.show()
 
 # -----------------------------------------------------------------------------
-# 3. Definição da arquitetura GRAPHSAGE - Modelo Dinâmico (Corrigido para Nós Fonte/Destino)
+# 3. Definição da arquitetura GRAPHSAGE - Modelo Dinâmico (Nós Fonte/Destino)
 # -----------------------------------------------------------------------------
 class GNNModel(torch.nn.Module):
     def __init__(self, edge_types, hidden_channels, out_channels):
@@ -206,7 +206,7 @@ for fold, (train_idx, val_idx) in enumerate(tscv.split(df_orders)):
     weight_pos = np.sum(y_train_fold == 0) / np.sum(y_train_fold == 1)
     
     # -------------------------------------------------------------------------
-    # A. Classificar Dummy (BASELINE CEGO)
+    # A. Classificar Dummy (Baseline Cego) para referência de performance
     # -------------------------------------------------------------------------
     dummy_model = DummyClassifier(strategy="stratified", random_state=42)
     dummy_model.fit(X_xgb_base.iloc[train_idx], y_train_fold)
@@ -297,7 +297,6 @@ for fold, (train_idx, val_idx) in enumerate(tscv.split(df_orders)):
     all_probs_dummy.extend(probs_dummy)
     all_probs_xgb.extend(probs_xgb)
     all_probs_gnn.extend(probs_gnn)
-    # -------------------------------------------------------------------------
     
     folds_metrics.append({
         'acc_dummy': accuracy_score(y_val_fold, preds_dummy),

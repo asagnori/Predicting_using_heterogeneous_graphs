@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python3 -m py_compile src/Predicting_heterogeneous_graphs_final_w_GNNExplainer && printf 'py_compile: OK\\\\n'; printf '\\\\n--- suspicious patterns ---\\\\n'; rg -n 'TODO\\|FIXME\\|except\\|input\\\\\\(\\|globals\\\\\\(\\|to_csv\\|create_engine\\|password\\|val_idx\\|train_idx\\|edge_index\\|mask\\|y\\\\s\\*=\\|actual_class\\|GNNExplainer\\|Explainer' src/Predicting_heterogeneous_graphs_final_w_GNNExplainer \\| sed -n '1,260p'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
